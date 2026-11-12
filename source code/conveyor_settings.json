@@ -1,0 +1,17 @@
+{
+    "speed": 500,
+    "direction": "FORWARD",
+    "auto_start": true,
+    "min_speed": 50,
+    "max_speed": 2000,
+    "start_sensor": "S1",
+    "end_sensor": "S2",
+    "sensor_active_level": 1,
+    "start_debounce_s": 0.2,
+    "end_debounce_s": 0.05,
+    "stop_settle_s": 0.5,
+    "run_timeout_s": 60,
+    "release_mode": "timer",
+    "release_timer_s": 5,
+    "detect_wait_s": 3.0
+}

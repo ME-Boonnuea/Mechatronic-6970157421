@@ -1,0 +1,22 @@
+{
+    "belt_depth_mm": 425,
+    "object_threshold_mm": 20,
+    "min_valid_depth_mm": 50,
+    "min_area_px": 300,
+    "min_good_frames": 3,
+    "segment_every_n": 1,
+    "crop_margin_px": 10,
+    "max_saved_crops": 50,
+    "crop_jpeg_quality": 90,
+    "web_port": 5000,
+    "yolo_enabled": true,
+    "yolo_model": "yolo11n-seg.pt",
+    "yolo_conf": 0.25,
+    "yolo_imgsz": 640,
+    "yolo_save_annotated": true,
+    "height_method": "crop_seg",
+    "belt_reference": "fixed",
+    "yolo_mode": "server",
+    "yolo_url": "http://127.0.0.1:8765",
+    "yolo_timeout_s": 2.0
+}
