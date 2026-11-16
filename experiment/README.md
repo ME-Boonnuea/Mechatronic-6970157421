@@ -35,7 +35,15 @@
 
 วิดีโอการทำงานจริงของระบบสามารถเปิดดูได้จากไฟล์ต่อไปนี้
 
-(VID20261112191850_present.mp4)
+<video src="https://github.com/ME-Boonnuea/Mechatronic-6970157421/blob/main/experiment/VID20261112191850_present.mp4"
+       width="600"
+       controls>
+</video>
+
+<video width="600" controls>
+  <source src="https://github.com/ME-Boonnuea/Mechatronic-6970157421/blob/main/experiment/VID20261112191850_present.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
 
 ## การอ่านผลลัพธ์
 
