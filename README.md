@@ -47,17 +47,19 @@
 │   ├── ขั้นตอนการทำงานระบบตรวจจับวัตถุ.png
 │   └── ขั้นตอนการทำงานระบบมีคาทรอนิกส์อัตโนมัติ.png
 ├── source code/
-│   ├── piSerial.py              # เริ่มและควบคุมโปรเซสหลัก
-│   ├── conveyor.py              # ควบคุมสายพานผ่าน Serial
-│   ├── camera.py                # รับภาพ RealSense และทำงานอัตโนมัติ
-│   ├── web_stream.py            # Web UI และภาพสตรีม
-│   ├── detector.py              # วิเคราะห์ภาพความลึกและวัดวัตถุ
-│   ├── dobot.py                 # ควบคุม Dobot MG400
-│   ├── yolo_detect.py           # ประมวลผล YOLO/YOLO-seg
-│   ├── yolo_server.py           # HTTP server สำหรับ YOLO ใน Docker
-│   ├── state_io.py              # อ่าน/เขียนไฟล์สถานะร่วมกัน
-│   ├── *_settings.json          # ค่าตั้งต้นของอุปกรณ์
-│   ├── STATE_CONTRACT.md        # รูปแบบและ handshake ของ state files
+│   ├── Raspberry Pi/            # โปรแกรมควบคุมและประมวลผลบน Raspberry Pi
+│   │   ├── piSerial.py          # เริ่มและควบคุมโปรเซสหลัก
+│   │   ├── camera.py            # รับภาพ RealSense และทำงานอัตโนมัติ
+│   │   ├── detector.py          # วิเคราะห์ภาพความลึกและวัดวัตถุ
+│   │   ├── dobot.py             # ควบคุม Dobot MG400
+│   │   ├── web_stream.py        # Web UI และภาพสตรีม
+│   │   ├── yolo_detect.py       # ประมวลผล YOLO/YOLO-seg
+│   │   ├── yolo_server.py       # HTTP server สำหรับ YOLO ใน Docker
+│   │   ├── state_io.py          # อ่าน/เขียนไฟล์สถานะร่วมกัน
+│   │   ├── *_settings.json      # ค่าตั้งต้นของอุปกรณ์
+│   │   └── STATE_CONTRACT.md    # รูปแบบและ handshake ของ state files
+│   ├── Pi Pico/                 # โปรแกรมควบคุมสายพานผ่าน Serial
+│   │   └── conveyor.py          # โปรแกรมฝั่ง Raspberry Pi สำหรับควบคุมสายพาน
 │   └── README.md                # คู่มือการติดตั้งและใช้งานเชิงเทคนิค
 └── experiment/                  # ไฟล์ทดลองของโปรเจกต์
 ```
@@ -77,7 +79,7 @@ dobot.py     -> dobot_status.json และ dobot_last_cycle.json
 camera.py    -> HTTP /predict -> yolo_server.py -> YOLO
 ```
 
-การจับคู่ผลตรวจจับกับวัตถุใช้ `object_id` เดียวกันตลอดหนึ่งรอบการทำงาน เพื่อป้องกันการหยิบผลของวัตถุคนละชิ้น รายละเอียด schema และเงื่อนไขของไฟล์สถานะอยู่ใน [`STATE_CONTRACT.md`](source%20code/STATE_CONTRACT.md)
+การจับคู่ผลตรวจจับกับวัตถุใช้ `object_id` เดียวกันตลอดหนึ่งรอบการทำงาน เพื่อป้องกันการหยิบผลของวัตถุคนละชิ้น รายละเอียด schema และเงื่อนไขของไฟล์สถานะอยู่ใน [`STATE_CONTRACT.md`](source%20code/Raspberry%20Pi/STATE_CONTRACT.md)
 
 ## การติดตั้งเบื้องต้น
 
@@ -101,7 +103,7 @@ export CELL_STATE_DIR=/dev/shm/cell_state
 เข้าไปที่โฟลเดอร์โปรแกรมก่อน
 
 ```bash
-cd "source code"
+cd "source code/Raspberry Pi"
 ```
 
 เริ่มโปรแกรมอัตโนมัติทั้งระบบ โดย Dobot จะอยู่ในโหมดจำลองการทำงานเป็นค่าเริ่มต้น
@@ -132,10 +134,10 @@ python3 piSerial.py --dobot-live            # เปิดใช้งาน Dob
 
 - โค้ดใน repository นี้เป็นซอฟต์แวร์ฝั่ง Raspberry Pi และ Docker YOLO
 - Firmware ของบอร์ด RP2350/Cytron เป็น dependency แยกต่างหาก ไม่ได้รวมอยู่ใน repository นี้
-- `conveyor.py` สื่อสารกับ firmware ผ่าน Serial แต่ไม่ใช่ firmware ควบคุมมอเตอร์
+- `source code/Pi Pico/conveyor.py` สื่อสารกับ firmware ผ่าน Serial แต่ไม่ใช่ firmware ควบคุมมอเตอร์
 - ควรทดสอบวัตถุทีละชิ้นในโหมดจำลองก่อนเชื่อมต่อ Dobot จริง
 
 ## เอกสารเพิ่มเติม
 
 - [คู่มือการติดตั้งและใช้งานเชิงเทคนิค](source%20code/README.md)
-- [รายละเอียด state files และ handshake](source%20code/STATE_CONTRACT.md)
+- [รายละเอียด state files และ handshake](source%20code/Raspberry%20Pi/STATE_CONTRACT.md)

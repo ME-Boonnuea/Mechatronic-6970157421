@@ -1,6 +1,8 @@
 # Conveyor cell: Raspberry Pi control group and Docker YOLO group
 
-This repository contains the Raspberry Pi control software for a conveyor cell.
+This folder contains the control software for a conveyor cell. The source is
+split by runtime location: Raspberry Pi programs are under `Raspberry Pi/`,
+while the RP2350/Pico board firmware is under `Pi Pico/`.
 The physical system is:
 
 - Raspberry Pi: runs the conveyor, camera, web UI, YOLO client, and Dobot control.
@@ -8,20 +10,52 @@ The physical system is:
 - Intel RealSense D435i: provides colour and depth frames to the Raspberry Pi.
 - Dobot MG400: receives pick-and-place commands from the Raspberry Pi.
 
-The Raspberry Pi programs coordinate through small JSON files in `state/`. The
-file formats and handshake are defined in `STATE_CONTRACT.md`.
+The Raspberry Pi programs coordinate through small JSON files in
+`Raspberry Pi/state/`. The
+file formats and handshake are defined in `Raspberry Pi/STATE_CONTRACT.md`.
+
+## Source layout
+
+```text
+source code/
+├── README.md
+├── Raspberry Pi/
+│   ├── piSerial.py              # launches and supervises automatic processes
+│   ├── camera.py                # RealSense capture and detection workflow
+│   ├── detector.py              # depth segmentation and measurement
+│   ├── dobot.py                 # Dobot MG400 control
+│   ├── web_stream.py            # web UI and camera streams
+│   ├── yolo_detect.py           # YOLO inference client/implementation
+│   ├── yolo_server.py           # YOLO HTTP server for Docker
+│   ├── state_io.py              # shared JSON state helpers
+│   ├── *_settings.json          # device and detection settings
+│   └── STATE_CONTRACT.md        # state-file contract
+└── Pi Pico/
+    └── main.py                  # MicroPython firmware copied to the board
+```
+
+`Pi Pico/main.py` is the board-side MicroPython firmware. It reads the sensors,
+drives the motor, and communicates with the Raspberry Pi over USB serial. It is
+copied to the board as `main.py`.
+
+The Raspberry Pi-side serial controller is expected to be `conveyor.py`, but it
+is not present in the current `Raspberry Pi/` folder. The automatic launcher
+`piSerial.py` therefore cannot start the conveyor process until that Pi-side
+file is restored or the launcher is changed to the intended path.
 
 | File | Runs on | Job |
 |---|---|---|
-| `conveyor.py` | Raspberry Pi | Only process that opens the serial port to the RP2350 Pro. Runs the belt and writes conveyor state. |
+| `conveyor.py` | Raspberry Pi | Expected Pi-side process that opens the serial port, runs the belt, and writes conveyor state. It is currently missing from `Raspberry Pi/`. |
 | `camera.py` + `web_stream.py` | Raspberry Pi | Captures from the RealSense D435i, performs depth analysis, serves the web page, and requests YOLO results. |
 | `detector.py` | Raspberry Pi library | Pure OpenCV/numpy depth segmentation, measurement, cropping, and height calculation. It does not call YOLO. |
 | `dobot.py` | Raspberry Pi | Validates the result and controls the Dobot MG400 pick-and-place cycle. |
 | `piSerial.py` | Raspberry Pi | Starts and supervises the three automatic Pi processes. |
 | `state_io.py` | Raspberry Pi library | Shared JSON state-file and freshness helpers. |
 
-The RP2350 Pro firmware is a separate board-side dependency and is not included
-in this repository. Only the Pi-side `conveyor.py` belongs in this group.
+The RP2350 Pro firmware is included as `Pi Pico/main.py`. It is separate from
+the Raspberry Pi control process: the board firmware handles low-level sensor
+and motor operations, while the missing Pi-side `conveyor.py` should handle
+cycle sequencing and state files.
 
 ## Docker YOLO group
 
@@ -42,10 +76,11 @@ when a YOLO-based height method is selected, but the inference call is made by
 
 ## RP2350 Pro board boundary
 
-The board firmware is maintained separately. It reads the Start and End
-sensors and drives the conveyor motor. The Raspberry Pi communicates with it
-through the serial protocol implemented by `conveyor.py`; `conveyor.py` does
-not contain the motor-control firmware and must not be copied to the board.
+`Pi Pico/main.py` reads the Start and End sensors and drives the conveyor motor.
+It must be copied to the RP2350/Motion 2350 Pro as `main.py`. The Raspberry Pi
+communicates with it through USB serial. The board firmware does not decide
+when to start or release a cycle; that sequencing belongs to the Pi-side
+`conveyor.py` process.
 
 ## Install (Pi)
 
@@ -62,9 +97,23 @@ export CELL_STATE_DIR=/dev/shm/cell_state
 ```
 
 Order of choice for the state folder: `--state-dir`, then `CELL_STATE_DIR`,
-then `Project/state/`.
+then `Raspberry Pi/state/`.
+
+Run the Raspberry Pi programs from the Raspberry Pi source directory:
+
+```
+cd "source code/Raspberry Pi"
+```
+
+The configuration files and the shared `state/` directory are in this same
+directory. The board firmware is in the sibling `Pi Pico/` folder.
 
 ## Run the Raspberry Pi control group (auto mode)
+
+`piSerial.py` builds child paths relative to its own directory. With the
+current layout, the required Pi-side `conveyor.py` file is missing, so the
+complete automatic group cannot run until that file is restored or the launcher
+is updated.
 
 ```
 python3 piSerial.py                    # conveyor, camera, dobot (dobot in DRY RUN)
@@ -98,16 +147,22 @@ Test one object at a time first.
 
 Each program has no state-file input in manual mode, so the others do not need to run.
 
-**conveyor.py** (needs the board connected; stop `piSerial.py` first, only one program may open the port)
-```
-python3 conveyor.py                    # menu: s <speed>, f, b, stop, status, show, save, q
-python3 conveyor.py --port /dev/ttyACM0
-python3 conveyor.py --no-autostart     # do not send the saved speed on connect
-python3 conveyor.py --auto             # auto mode alone: writes state/conveyor_status.json
-python3 conveyor.py --clear-fault      # after a latched fault, once the cell is safe
+**Pi Pico firmware** (`main.py`) must be copied to the RP2350/Motion 2350 Pro
+board. It is not run with Python on the Raspberry Pi:
+
+```text
+Copy: source code/Pi Pico/main.py
+To:   the board as main.py
 ```
 
+The Raspberry Pi-side `conveyor.py` commands will be added here after that
+controller is restored to the repository.
+
 **camera.py** (manual: on/off by hand, still shown on the web page)
+
+Return to `source code/Raspberry Pi/` before running the camera or Dobot
+commands below.
+
 ```
 python3 camera.py                      # camera off; press "Camera ON" on the page
 python3 camera.py --on                 # camera on at start
@@ -190,14 +245,14 @@ project folder (read only), and the model folder.
    ```
    sudo docker run -d --name yolo --restart unless-stopped --network host --ipc=host \
      -v /dev/shm/cell_state:/state \
-     -v ~/Project:/app:ro \
+    -v ~/Project/source\ code/Raspberry\ Pi:/app:ro \
      -v ~/models:/models:ro \
      ultralytics/ultralytics:latest-arm64 \
      python3 /app/yolo_server.py --model /models/best.pt --root /state --port 8765
    ```
    Use your own state folder in the first `-v` (the same one `camera.py` uses:
    `--state-dir`, `CELL_STATE_DIR`, or `~/Project/state`). `~/Project` is the Pi
-   folder that holds `yolo_server.py` and `yolo_detect.py`.
+   folder that holds `yolo_server.py` and `yolo_detect.py` (`source code/Raspberry Pi`).
 3. Check it: `sudo docker logs yolo` should end with `listening on http://127.0.0.1:8765`,
    and `curl http://127.0.0.1:8765/health` should print `"ok": true`.
 4. In `camera_settings.json`: `"yolo_enabled": true, "yolo_mode": "server"`
@@ -272,12 +327,12 @@ The Dobot IP is `dobot_ip` in the same file (or `--ip`).
 | `captures/obj_<id>.jpg` | camera.py | web page (newest 50 kept) |
 | `clear_conveyor.flag`, `clear_dobot.flag` | `--clear-fault` | the running program deletes it |
 
-Settings you edit by hand stay next to the programs: `conveyor_settings.json`,
-`camera_settings.json`, `dobot_settings.json`.
+Settings you edit by hand are in `Raspberry Pi/`: `conveyor_settings.json`,
+`camera_settings.json`, and `dobot_settings.json`.
 
 ## State files
 
 The main files are `conveyor_status.json`, `camera_status.json`,
 `detect_result.json`, `dobot_status.json`, and `dobot_last_cycle.json`.
-Captures are stored under `state/captures/`. See `STATE_CONTRACT.md` for the
+Captures are stored under `state/captures/`. See `Raspberry Pi/STATE_CONTRACT.md` for the
 complete producer/consumer table and object-id handshake.
