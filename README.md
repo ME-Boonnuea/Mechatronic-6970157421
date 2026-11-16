@@ -49,6 +49,7 @@
 .
 ├── README.md
 ├── image/
+│   ├── Work Station.png
 │   ├── Mechatronic Project.png
 │   ├── ขั้นตอนการทำงานระบบตรวจจับวัตถุ.png
 │   └── ขั้นตอนการทำงานระบบมีคาทรอนิกส์อัตโนมัติ.png
